@@ -4,7 +4,9 @@ A simple SAT solver based on DPLL algorithm, written in Racket. Only less than 1
 
 ### Usages
 
-As a library, `(require "dpll.rkt")` to load the library, 
+Use `raco pkg install SAT` to install this package.
+
+As a library, use `(require SAT)` to load the library, 
 
 * use `(solve filepath)` given a filepath of DIMACS file
 * use `(get-model)` to get the assignment of variables
@@ -13,5 +15,4 @@ As a library, `(require "dpll.rkt")` to load the library,
 
 ### TODO
 
-* Shift to Racket package system
 * Improve performance, use Conflict-Driven Clause Learning
