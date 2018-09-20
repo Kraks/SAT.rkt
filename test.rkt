@@ -52,4 +52,14 @@
 (check-true (solve "tests/8queens.cnf"))
 (check-true (solve "tests/12queens.cnf"))
 
+(define (get-all-cnf-files dir)
+  (map (λ (p) (string-append dir "/" (path->string p)))
+       (filter (λ (p) (equal? #"cnf" (filename-extension p))) (directory-list dir))))
 
+(for ([f (get-all-cnf-files "tests/uuf50-218")])
+  (displayln f)
+  (check-false (solve f)))
+
+(for ([f (get-all-cnf-files "tests/uf50-218")])
+  (displayln f)
+  (check-true (solve f)))

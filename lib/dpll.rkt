@@ -60,6 +60,7 @@
 
 (define (pick-var f) (car (car f)))
 
+;; dpll : S-exp-formula hash -> hash-map|boolean
 (define (dpll f assgn)
   (cond [(memf (compose zero? length) f) #f]
         [(zero? (length f)) assgn]
@@ -75,13 +76,16 @@
                 => (λ (assgn) assgn)]
                [else (dpll (cons `((not ,v)) f) assgn)])]))
 
+;; check-sat : S-exp-formula -> boolean
 (define (check-sat f)
   (define result (dpll f mt-assgn))
   (if result #t #f))
 
+;; get-model : S-exp-formula -> hash-map|boolean
 (define (get-model f)
   (define result (dpll f mt-assgn))
   (if result result #f))
 
+;; solve : string -> boolean
 (define (solve filename)
   (check-sat (parse-dimacs-file filename)))
