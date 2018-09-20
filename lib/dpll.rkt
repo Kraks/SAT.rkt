@@ -91,6 +91,23 @@
                               (or (dpll (propagate new-var #t clauses))
                                   (dpll (propagate new-var #f clauses))))]))]))
 
+;; Reimp
+
+(define (dpll f assgn)
+  (cond [(memf (compose zero? length) f) #f]
+        [(zero? (length f)) assgn]
+        [(contains-unit? f)
+         => (λ (uv)
+              (define-values (new-f new-assgn) (elim-unit f))
+              (dpll new-f (assgn-update* assgn new-assgn)))]
+        [(contains-pure? f)
+         => (λ (pv) (dpll (cons `(,pv) f) assng))]
+        [else
+         (define v (pick-var f))
+         (cond [(dpll (cons `(,v) f) assgn)
+                => (λ (assgn) assgn)]
+               [else (dpll (cons `((not ,v)) f) assgn)])]))
+
 (define (check-sat clauses)
   (hash-clear! assignment)
   (dpll clauses))
