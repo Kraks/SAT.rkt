@@ -22,6 +22,8 @@
      (cond [(non-empty-string? line)
             (cond [(char=? (string-ref line 0) #\c) acc]
                   [(char=? (string-ref line 0) #\p) acc]
+                  [(char=? (string-ref line 0) #\%) acc]
+                  [(char=? (string-ref line 0) #\0) acc]
                   [else (append acc
                                 `(,(all-but-last
                                     (map aux
