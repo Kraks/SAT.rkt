@@ -7,10 +7,9 @@
 |#
 
 (require "parser.rkt")
+(require rackunit)
 
 (provide (all-defined-out))
-
-(define assignment (make-hash))
 
 (define (get-var var)
   (match var
@@ -22,80 +21,71 @@
     [`(not ,var^) #f]
     [else #t]))
 
-(define (propagate var val clauses)
-  (hash-set! assignment var val)
-  (define (propagate-clause clause)
-    (cond [(empty? clause) clause]
-          [(eq? (get-var (first clause)) var)
-           (if (eq? (not-neg? (first clause)) val)
-               #f ; we can eliminate this clause
-               (propagate-clause (rest clause)))]
-          [(propagate-clause (rest clause)) =>
-           (λ (lst) (cons (first clause) lst))]
-          [else #f]))
-  (filter-map propagate-clause clauses))
+(define (neg var)
+  (match var
+    [`(not ,var^) var^]
+    [_ `(not ,var)]))
 
-(define (iter-propagate vars val-f init-clauses)
-  (let loop ([vars vars] 
-             [clauses init-clauses])
-    (cond [(empty? vars) clauses]
-          [else (loop (rest vars)
-                      (propagate (get-var (first vars))
-                                 (val-f (first vars))
-                                 clauses))])))
+(define (unit? cls) (eq? 1 (length cls)))
 
-(define (get-unit-clauses clauses)
-  (for/list ([clause clauses] #:when (eq? (length clause) 1))
-    (first clause)))
+(define (has-unit? f)
+  (define unit-vars (map car (filter unit? f)))
+  (if (empty? unit-vars) #f
+      (car unit-vars)))
 
-; If clause c1 is a literal and contains a variable p,
-; and if clause c2 contains (not p), then reduce c2 to
-; a new clasue without (not p) and discard c1
-(define (eliminate-unit-clause clauses)
-  (iter-propagate (get-unit-clauses clauses) not-neg? clauses))
+(define (get-all-vars cls)
+  (apply set (foldl append '() cls)))
 
-(define (get-all-variables clauses)
-  (apply set (foldl append '() clauses)))
+(define (has-pure? f)
+  (define pure-vars
+    (foldl append '()
+           (filter (λ (vs) (eq? 1 (length vs)))
+                   (group-by get-var (set->list (get-all-vars f))))))
+  (if (empty? pure-vars) #f
+      (car pure-vars)))
 
-(define (appear-only-once? v cmp lst)
-  (cond [(empty? lst) #f]
-        [(cmp v (first lst))
-         (not (appear-only-once? v cmp (rest lst)))]
-        [else (appear-only-once? v cmp (rest lst))]))
+(define (assgn-update* a1 a2)
+  (foldl (λ (kv m) (hash-set m (car kv) (cdr kv))) a1 (hash->list a2)))
 
-; Get a list of pure variables that only appears either negated
-; or not negated
-(define (get-pure-variables clauses)
-  (let ([all-vars (set->list (get-all-variables clauses))])
-    (filter (λ (v) (appear-only-once? v
-                    (λ (x y) (equal? (get-var x) (get-var y)))
-                    all-vars)) all-vars)))
+(define mt-assgn (make-immutable-hash))
 
-; If a variable p occurs only positively, then p must be ⊤
-; If a variable p occurs only negatively, then p must be ⊥
-(define (eliminate-pure-variables clauses)
-  (iter-propagate (get-pure-variables clauses) not-neg? clauses))
+(define (not-contains v) (λ (cls) (if (member v cls) #f #t)))
 
-(define (choose-var clauses)
-  (cond [(empty? clauses) (error "empty clauses")]
-        [else (first (first clauses))]))
+(define remove-var (curry remove))
+    
+(define (elim-unit f uv)
+  (define assgn (make-immutable-hash (if (not-neg? uv) `((,uv . #t)) `((,uv . #f)))))
+  (define new-f (map (remove-var (neg uv)) (filter (not-contains uv) f)))
+  (values new-f assgn))
 
-(define (dpll clauses)
-  (cond [(zero? (length clauses)) #t] ;immediately sat
-        [(memf (compose zero? length) clauses) #f] ;immediately unsat
-        [else (let ([clauses (eliminate-pure-variables
-                              (eliminate-unit-clause clauses))])
-                (cond [(zero? (length clauses)) #t]
-                      [(memf (compose zero? length) clauses) #f]
-                      [else (let ([new-var (get-var (choose-var clauses))])
-                              (or (dpll (propagate new-var #t clauses))
-                                  (dpll (propagate new-var #f clauses))))]))]))
+(define (pick-var f) (car (car f)))
 
-(define (check-sat clauses)
-  (hash-clear! assignment)
-  (dpll clauses))
+;; dpll : S-exp-formula hash -> hash-map|boolean
+(define (dpll f assgn)
+  (cond [(memf (compose zero? length) f) #f]
+        [(zero? (length f)) assgn]
+        [(has-unit? f)
+         => (λ (uv)
+              (define-values (new-f new-assgn) (elim-unit f uv))
+              (dpll new-f (assgn-update* assgn new-assgn)))]
+        [(has-pure? f)
+         => (λ (pv) (dpll (cons `(,pv) f) assgn))]
+        [else
+         (define v (pick-var f))
+         (cond [(dpll (cons `(,v) f) assgn)
+                => (λ (assgn) assgn)]
+               [else (dpll (cons `((not ,v)) f) assgn)])]))
 
-(define (get-model) assignment)
+;; check-sat : S-exp-formula -> boolean
+(define (check-sat f)
+  (define result (dpll f mt-assgn))
+  (if result #t #f))
 
+;; get-model : S-exp-formula -> hash-map|boolean
+(define (get-model f)
+  (define result (dpll f mt-assgn))
+  (if result result #f))
+
+;; solve : string -> boolean
 (define (solve filename)
   (check-sat (parse-dimacs-file filename)))
