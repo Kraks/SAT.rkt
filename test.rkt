@@ -51,3 +51,5 @@
 (check-true (solve "tests/5queens.cnf"))
 (check-true (solve "tests/8queens.cnf"))
 (check-true (solve "tests/12queens.cnf"))
+
+
