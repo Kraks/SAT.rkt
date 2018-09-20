@@ -54,7 +54,7 @@
 (define remove-var (curry remove))
     
 (define (elim-unit f uv)
-  (define assgn (make-immutable-hash (if (not-neg? uv) `((,uv . #t)) `((,uv . #f)))))
+  (define assgn (make-immutable-hash (if (not-neg? uv) `((,uv . #t)) `((,(neg uv) . #f)))))
   (define new-f (map (remove-var (neg uv)) (filter (not-contains uv) f)))
   (values new-f assgn))
 
@@ -89,3 +89,6 @@
 ;; solve : string -> boolean
 (define (solve filename)
   (check-sat (parse-dimacs-file filename)))
+
+(define (solve/model filename)
+  (get-model (parse-dimacs-file filename)))
