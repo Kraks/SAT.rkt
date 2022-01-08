@@ -59,5 +59,4 @@
   (check-false (solve f)))
 
 (for ([f (get-all-cnf-files "tests/uf50-218")])
-  (displayln f)
   (check-true (solve f)))
