@@ -4,9 +4,9 @@
 ;; It is a Racket implementation of the `dpli` function
 ;; in Handbook of Practical Logic and Automated Reasoning.
 
-(require "dpll.rkt")
+(require "utils.rkt")
 (require "parser.rkt")
-(provide check-sat^ get-model^ solve^ unassigned unit-propagate backtrack posneg-count)
+(provide unassigned unit-propagate backtrack posneg-count dpli)
 
 (define (unassigned f trail)
   (define fv (filter

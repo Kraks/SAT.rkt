@@ -8,7 +8,7 @@
 ;; blowup induced by the resolution rule.
 
 (require "parser.rkt")
-(require "dpll.rkt")
+(require "utils.rkt")
 
 (provide dp)
 
@@ -36,15 +36,15 @@
   (define pos (list->set (set-map c abs)))
   (not (equal? (set-count pos) (set-count c))))
 
-(define (dp f assgn)
+(define (dp f)
   (cond [(memf (compose zero? set-count) f) #f]
-        [(zero? (length f)) assgn]
+        [(zero? (length f)) #t]
         [(has-unit? f)
          => (λ (uv)
-              (define-values (new-f new-assgn) (elim-unit f uv))
-              (dp new-f (assgn-update* assgn new-assgn)))]
+              (define-values (new-f _) (elim-unit f uv))
+              (dp new-f))]
         [(has-pure? f)
-         => (λ (pv) (dp (cons `(,pv) f) assgn))]
+         => (λ (pv) (dp (cons `(,pv) f)))]
         [else
          (define v (pick-pivot f))
-         (dp (filter-not tautologous? (resolve-on v f)) assgn)]))
+         (dp (filter-not tautologous? (resolve-on v f)))]))

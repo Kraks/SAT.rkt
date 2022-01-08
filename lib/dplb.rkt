@@ -6,10 +6,10 @@
 ;; in Handbook of Practical Logic and Automated Reasoning.
 
 (require "parser.rkt")
-(require "dpll.rkt")
+(require "utils.rkt")
 (require "dpli.rkt")
 
-(provide dplb check-sat^^ get-model^^ solve^^)
+(provide dplb)
 
 (define (backjump f p trail)
   (match (backtrack trail)

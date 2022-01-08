@@ -3,7 +3,7 @@
 ;; Tests
 
 (require rackunit)
-(require "lib/dpll.rkt")
+(require "lib/sat.rkt")
 (require "lib/parser.rkt")
 
 (check-true (check-sat `(,(set 1 2 3))))
@@ -55,10 +55,9 @@
   (map (λ (p) (string-append dir "/" (path->string p)))
        (filter (λ (p) (equal? #"cnf" (filename-extension p))) (directory-list dir))))
 
-(time (for ([f (get-all-cnf-files "tests/uuf50-218")])
-  (displayln f)
-  (check-false (solve f))))
+(for ([f (get-all-cnf-files "tests/uuf50-218")])
+  (check-false (solve f)))
 
-(time (for ([f (get-all-cnf-files "tests/uf50-218")])
+(for ([f (get-all-cnf-files "tests/uf50-218")])
   (displayln f)
-  (check-true (solve f))))
+  (check-true (solve f)))

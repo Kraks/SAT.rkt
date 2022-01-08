@@ -29,9 +29,9 @@
   (require "test.rkt")
   )
 
-(require "lib/dpll.rkt")
+(require "lib/sat.rkt")
 (require "lib/parser.rkt")
-(provide (all-from-out "lib/dpll.rkt"))
+(provide (all-from-out "lib/sat.rkt"))
 (provide (all-from-out "lib/parser.rkt"))
 
 (module+ main
