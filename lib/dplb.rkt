@@ -38,15 +38,3 @@
             [else (define p
                     (argmax (posneg-count f^) (set->list unassgn)))
                   (dplb f (cons (cons p 'Guessed) trail^))])]))
-
-
-(define (check-sat^^ f)
-  (define result (dplb f '()))
-  (if result #t #f))
-
-(define (get-model^^ f)
-  (define result (dplb f '()))
-  (if result (map car result) #f))
-
-(define (solve^^ filename)
-  (check-sat^^ (parse-dimacs-file filename)))
